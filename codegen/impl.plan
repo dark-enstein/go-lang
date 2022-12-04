@@ -1,0 +1,3 @@
+#usage codegen --type=[type] --string=[string to be encoded] --dest=[preferred code destination]
+#init flags, parse type, and process string. create qr img at dest
+#impl flags, one type
