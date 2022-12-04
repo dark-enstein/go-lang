@@ -7,7 +7,7 @@ import (
 
 func whenFlagHasNoString(t *testing.T) {
 	expectedTypeNostring := false
-	os.Args = []string{"codegen", "--type", "qr", "--string", "none", "dest", "/users/gent/mane"}
+	os.Args = []string{"codegen", "--type", "qrgen", "--string", "none", "dest", "/users/gent/mane"}
 	request := flagParse()
 	if request.Present != false {
 		actualTypeNostring := request.Present

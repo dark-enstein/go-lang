@@ -3,9 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/boombuler/barcode"
-	"github.com/boombuler/barcode/qr"
-	"image/png"
+	"github.com/dark-enstein/go-lang/codegen/aztec"
+	"github.com/dark-enstein/go-lang/codegen/code128"
+	"github.com/dark-enstein/go-lang/codegen/code39"
+	"github.com/dark-enstein/go-lang/codegen/code93"
+	"github.com/dark-enstein/go-lang/codegen/datamatrix"
+	"github.com/dark-enstein/go-lang/codegen/qrgen"
+	"log"
 	"os"
 	"regexp"
 )
@@ -14,8 +18,8 @@ type tracingBlob struct {
 	allCMDArguments      []string
 	flagParsereqInit     requestStatus
 	flagParsereqFinal    requestStatus
-	flagParseReturnVal   requestValue
-	flagParseResponseVal requestValue
+	flagParseReturnVal   RequestValue
+	flagParseResponseVal RequestValue
 	codeGenCompileRegexp *regexp.Regexp
 	codeGenRegexpMatch   bool
 	codeGenDestInit      string
@@ -23,80 +27,114 @@ type tracingBlob struct {
 	codeGenTypeReq       string
 }
 
-var tracer tracingBlob
+var Tracer tracingBlob
 
 type requestStatus struct {
-	Type    *string
+	Type *string
+
 	Present *string
 	Dest    *string
 }
 
-type requestValue struct {
+type RequestValue struct {
 	Type    string
 	Present bool
 	Text    string
 	Dest    string
 }
 
-func flagParse() requestValue {
+func flagParse() RequestValue {
 	var req requestStatus
-	tracer.flagParsereqInit = req
-	req.Type = flag.String("type", "qr", "generate qr codes")
+	Tracer.flagParsereqInit = req
+	req.Type = flag.String("type", "qr", "generate codes. Options: qr, code128ID")
 	req.Present = flag.String("string", "none", "enter input string to be encoded")
 	req.Dest = flag.String("dest", ".", "destination to save generated code")
 
 	flag.Parse()
-	tracer.flagParsereqFinal = req
+	Tracer.flagParsereqFinal = req
 
 	if *req.Present == "none" {
-		tracer.flagParseReturnVal = requestValue{*req.Type, false, *req.Present, *req.Dest}
-		return requestValue{*req.Type, false, *req.Present, *req.Dest}
+		Tracer.flagParseReturnVal = RequestValue{*req.Type, false, *req.Present, *req.Dest}
+		return RequestValue{*req.Type, false, *req.Present, *req.Dest}
 	}
 
-	tracer.flagParseReturnVal = requestValue{*req.Type, true, *req.Present, *req.Dest}
-	return requestValue{*req.Type, true, *req.Present, *req.Dest}
+	Tracer.flagParseReturnVal = RequestValue{*req.Type, true, *req.Present, *req.Dest}
+	return RequestValue{*req.Type, true, *req.Present, *req.Dest}
 }
 
-func codeGen(r requestValue) error {
+func codeGen(r RequestValue) error {
 	re := regexp.MustCompile(".*/$")
-	tracer.codeGenCompileRegexp = re
-	tracer.codeGenRegexpMatch = re.Match([]byte(r.Dest))
+	Tracer.codeGenCompileRegexp = re
+	Tracer.codeGenRegexpMatch = re.Match([]byte(r.Dest))
 	if !re.Match([]byte(r.Dest)) {
-		tracer.codeGenDestInit = r.Dest
+		Tracer.codeGenDestInit = r.Dest
 		fmt.Println("Before dest path: ", r.Dest)
 		r.Dest = r.Dest + "/"
 		fmt.Println("After dest path: ", r.Dest)
 	}
-	tracer.codeGenDestFinal = r.Dest
-	tracer.codeGenTypeReq = r.Type
+	Tracer.codeGenDestFinal = r.Dest
+	Tracer.codeGenTypeReq = r.Type
+
 	if r.Type == "qr" {
-		//gen qr code
-		qrCode, _ := qr.Encode(r.Text, qr.M, qr.Auto)
-
-		qrCode, _ = barcode.Scale(qrCode, 200, 200)
-
-		file, _ := os.Create(r.Dest + "qrcode.png")
-		defer file.Close()
-
-		err := png.Encode(file, qrCode)
+		err := qrgen.QrGenerate(qrgen.RequestValue(r))
 		if err != nil {
+			log.Println("Encountered an error while trying to generate QR code")
 			return err
-		} else {
-			fmt.Println("File generated ")
 		}
 	}
+
+	if r.Type == "aztec" {
+		err := aztec.Generate(aztec.RequestValue(r))
+		if err != nil {
+			log.Println("Encountered an error while trying to generate Aztec code")
+			return err
+		}
+	}
+
+	if r.Type == "code39" {
+		err := code39.Generate(code39.RequestValue(r))
+		if err != nil {
+			log.Println("Encountered an error while trying to generate code39 code")
+			return err
+		}
+	}
+
+	if r.Type == "code128ID" {
+		err := code128.Generate(code128.RequestValue(r))
+		if err != nil {
+			log.Println("Encountered an error while trying to generate code128ID code")
+			return err
+		}
+	}
+
+	if r.Type == "code93" {
+		err := code93.Generate(code93.RequestValue(r))
+		if err != nil {
+			log.Println("Encountered an error while trying to generate code93 code")
+			return err
+		}
+	}
+
+	if r.Type == "datamatrix" {
+		err := datamatrix.Generate(datamatrix.RequestValue(r))
+		if err != nil {
+			log.Println("Encountered an error while trying to generate datamatrix code")
+			return err
+		}
+	}
+
 	return nil
 }
 
 func main() {
-	tracer.allCMDArguments = os.Args
+	Tracer.allCMDArguments = os.Args
 	request := flagParse()
-	tracer.flagParseResponseVal = request
+	Tracer.flagParseResponseVal = request
 	if request.Present == false {
 		fmt.Println("No text passed")
 		os.Exit(1)
 	}
 	codeGen(request)
 
-	fmt.Println(tracer)
+	fmt.Println(Tracer)
 }
