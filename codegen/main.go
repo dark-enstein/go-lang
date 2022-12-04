@@ -46,7 +46,7 @@ type RequestValue struct {
 func flagParse() RequestValue {
 	var req requestStatus
 	Tracer.flagParsereqInit = req
-	req.Type = flag.String("type", "qr", "generate codes. Options: qr, code128ID")
+	req.Type = flag.String("type", "qr", "generate codes. Options: qr, aztec, code39, code93, code128ID, datamatrix")
 	req.Present = flag.String("string", "none", "enter input string to be encoded")
 	req.Dest = flag.String("dest", ".", "destination to save generated code")
 
