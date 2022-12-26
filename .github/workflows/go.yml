@@ -22,7 +22,7 @@ jobs:
         go-version: 1.19
 
     - name: Build
-      run: cd pype/ ; go build -v ./...
+      run: sh build.sh
 
     - name: Test
       run: cd pype/ ; go test -v ./...
